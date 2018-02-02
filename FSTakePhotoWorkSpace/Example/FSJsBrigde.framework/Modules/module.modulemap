@@ -1,0 +1,6 @@
+framework module FSJsBrigde {
+  umbrella header "FSJsBrigde.h"
+
+  export *
+  module * { export * }
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html><head>
+	<style type='text/css'>
+		html { font-family:Helvetica; color:#222; }
+		h1 { color:steelblue; font-size:24px; margin-top:24px; }
+		button { margin:0 3px 10px; font-size:12px; }
+		.logLine { border-bottom:1px solid #ccc; padding:4px 2px; font-family:courier; font-size:11px; }
+	</style>
+</head><body>
+	<h1>WebViewJavascriptBridge Demo</h1>
+    <div id='buttons'></div> <div id='log'></div>
+	<script>
+	window.onerror = function(err) {
+		log('window.onerror: ' + err)
+	}
+    
+    function log(message, data) {
+        var log = document.getElementById('log')
+        var el = document.createElement('div')
+        el.className = 'logLine'
+        el.innerHTML = message + (data ? ':<br/>' + JSON.stringify(data) : '')
+        if (log.children.length) { log.insertBefore(el, log.children[0]) }
+        else { log.appendChild(el) }
+    }
+	
+	var button = document.getElementById('buttons').appendChild(document.createElement('button'))
+    button.innerHTML = 'Send message to ObjC'
+    button.onclick = function(e) {
+        e.preventDefault();
+        var data = 0;
+        log('JS sending message', data);
+        // WkWebView 调用方式
+        window.webkit.messageHandlers.FSJsBridge.postMessage({
+                                                      tag: "take_photo",
+                                                      index: 2  // 此处用作回调时区分（比如身份证正反面、手持身份证等等情况）
+                                                      });
+
+        // UIWebView 调用方式
+        //jsBridge.take_photo(101);
+    }
+    
+    document.body.appendChild(document.createElement('br'))
+
+    
+ 
+    var jsBridge = {
+        // UIWebView 调拍照方法，WkWebView 可以不定义
+        // 调用native拍照功能
+        // 参数tag 照片tag（必传），方便get_photo回调中区分
+        // 由B端执行C端代码
+        take_photo: function(tag){
+            var _this = this;
+            window.FSJsBridge.take_photo(tag,function(responseData){
+                _this.get_photo(responseData,tag);
+                                  
+            });
+        },
+
+        // 自动回调方法
+        // 拍完照片回调此函数，得到（base64）做进一步处理）
+        // photo_base64 = "dskhkfhdsf00sad2"
+        // error 参数 返回的错误信息 无错误返回 error = ''
+        // 由C端执行B端代码
+        // 拍照后主动调用执行
+        get_photo: function(photo_base64, tag, error){
+            //log(error);
+            console.log(photo_base64);
+            
+            var imgID = new Image();
+            imgID.width = 300;
+            imgID.height = 534;
+            imgID.src = "data:image/jpg;base64," + photo_base64;
+            document.body.appendChild(imgID);
+            
+            log('index:' + tag);
+        }
+    }
+        
+	</script>
+</body></html>
